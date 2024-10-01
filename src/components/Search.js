@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useRouter } from 'next/router';
@@ -10,16 +10,30 @@ const fetchJokes = async (query) => {
 
 const Search = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
   const router = useRouter();
   const { query } = router.query;
 
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+
   const { data, error, isLoading } = useQuery({
-    queryKey: ['jokes', query],
-    queryFn: () => fetchJokes(query),
-    enabled: query && query.length >= 4,
+    queryKey: ['jokes', debouncedSearchTerm],
+    queryFn: () => fetchJokes(debouncedSearchTerm),
+    enabled: debouncedSearchTerm.length >= 4,
     staleTime: 1000 * 60 * 5,
-    cacheTime: 1000 * 60 * 10,
+    cacheTime: 1000 * 60 * 10, 
   });
+
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
